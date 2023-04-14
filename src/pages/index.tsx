@@ -3,7 +3,7 @@ import Head from 'next/head';
 // import Image from 'next/image';
 import { Inter } from 'next/font/google';
 import { useQuery } from '@apollo/client';
-import GET_POKEMONS from '@/gql/queries/pokemon';
+import GET_POKEMONS from '@/gql/queries/pokemons';
 import graphqlClient from '@/gql/graphql-client';
 import Layout from '@/components/Layout';
 import Link from 'next/link';
