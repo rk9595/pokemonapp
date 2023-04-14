@@ -1,8 +1,11 @@
 import { useQuery } from '@apollo/client';
 import GET_POKEMON from '@/gql/queries/pokemon';
+import GET_POKEMON_EVOLUTIONS from '@/gql/queries/evolutions';
 import graphqlClient from '@/gql/graphql-client';
 import Layout from '@/components/Layout';
 import { useRouter } from 'next/router';
+import { useState } from 'react';
+import { log } from 'console';
 
 type Pokemon = {
   id: string;
@@ -24,11 +27,29 @@ type Pokemon = {
   maxCP: number;
   maxHP: number;
   image: string;
+  evolutions: PokemonEvolution[]; // Add the evolutions property
+};
+
+type PokemonEvolution = {
+  id: string;
+  number: string;
+  name: string;
+  classification: string;
+  types: string[];
+  resistant: string[];
+  weaknesses: string[];
+  fleeRate: number;
+  maxCP: number;
+  evolutions: PokemonEvolution[]; // Recursive reference to itself for nested evolutions
+  maxHP: number;
+  image: string;
 };
 
 const PokemonDetail: React.FC = () => {
   const router = useRouter();
   const { id } = router.query; // Access the 'id' parameter from the URL
+  const [showEvolutions, setShowEvolutions] = useState(false);
+  const [pokemonE, setPokemon] = useState<Pokemon | null>(null);
 
   // Fetch data for the Pokemon with the given 'id'
   const { loading, error, data } = useQuery(GET_POKEMON, {
@@ -44,8 +65,33 @@ const PokemonDetail: React.FC = () => {
   if (error) {
     return <div>Error: {error.message}</div>;
   }
+  const handleShowEvolutions = () => {
+    // setShowEvolutions(!showEvolutions);
 
+    if (!showEvolutions && !pokemonE?.evolutions) {
+      setShowEvolutions(true);
+      graphqlClient
+        .query({
+          query: GET_POKEMON_EVOLUTIONS,
+          variables: {
+            id: id as string,
+          },
+        })
+        .then(({ data }) => {
+          const { evolutions } = data.pokemon;
+          setPokemon((prevPokemon) => ({
+            ...prevPokemon!,
+            evolutions,
+          }));
+        })
+        .catch((error) => {
+          console.error('Error fetching evolutions:', error);
+        });
+    }
+  };
+  console.log('evolutions', pokemonE);
   const pokemon: Pokemon = data.pokemon;
+
   return (
     <Layout title={`Pokemon Details - ${pokemon.name}`}>
       <div className="flex flex-col items-center mt-10">
@@ -95,11 +141,43 @@ const PokemonDetail: React.FC = () => {
               <p className="mr-2">Max CP:</p>
               <p>{pokemon.maxCP}</p>
             </div>
-            <div className="flex justify-center items-center text-gray-500">
-              <p className="mr-2">Max HP:</p>
-              <p>{pokemon.maxHP}</p>
+            <div className="flex justify-center items-center mt-2">
+              <span className="font-semibold">Max HP:</span>
+              <span>{data.pokemon.maxHP}</span>
             </div>
           </div>
+        </div>
+        <div className="mt-8">
+          <h2 className="text-2xl font-semibold">Evolutions</h2>
+          <div className="flex justify-center mt-4">
+            <button
+              className="px-4 py-2 bg-blue-500 text-white font-semibold rounded"
+              onClick={handleShowEvolutions}
+            >
+              Evolutions
+            </button>
+          </div>
+          {showEvolutions && (
+            <div className="mt-8">
+              <h2 className="text-2xl font-semibold">Evolutions</h2>
+              {pokemonE?.evolutions && pokemonE.evolutions.length > 0 ? (
+                <div className="flex flex-wrap justify-center items-center mt-4">
+                  {pokemonE.evolutions.map((evolution) => (
+                    <div key={evolution.id} className="mx-2">
+                      <img
+                        src={evolution.image}
+                        alt={evolution.name}
+                        className="h-[80px] w-[80px] sm:h-[100px] sm:w-[100px] rounded"
+                      />
+                      <p className="text-center mt-1">{evolution.name}</p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-gray-500 mt-4">Loading Evolutions</p>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </Layout>
