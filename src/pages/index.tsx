@@ -7,6 +7,7 @@ import GET_POKEMONS from '@/gql/queries/pokemons';
 import graphqlClient from '@/gql/graphql-client';
 import Layout from '@/components/Layout';
 import Link from 'next/link';
+import GET_POKEMON from '@/gql/queries/pokemon';
 
 const inter = Inter({ subsets: ['latin'] });
 

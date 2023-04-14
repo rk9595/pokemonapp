@@ -4,8 +4,9 @@ import GET_POKEMON_EVOLUTIONS from '@/gql/queries/evolutions';
 import graphqlClient from '@/gql/graphql-client';
 import Layout from '@/components/Layout';
 import { useRouter } from 'next/router';
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { log } from 'console';
+import Modal from 'react-modal';
 
 type Pokemon = {
   id: string;
@@ -50,6 +51,7 @@ const PokemonDetail: React.FC = () => {
   const { id } = router.query; // Access the 'id' parameter from the URL
   const [showEvolutions, setShowEvolutions] = useState(false);
   const [pokemonE, setPokemon] = useState<Pokemon | null>(null);
+  const [modalIsOpen, setIsOpen] = React.useState(false);
 
   // Fetch data for the Pokemon with the given 'id'
   const { loading, error, data } = useQuery(GET_POKEMON, {
@@ -65,8 +67,12 @@ const PokemonDetail: React.FC = () => {
   if (error) {
     return <div>Error: {error.message}</div>;
   }
+  function closeModal() {
+    setIsOpen(false);
+  }
   const handleShowEvolutions = () => {
     // setShowEvolutions(!showEvolutions);
+    setIsOpen(true);
 
     if (!showEvolutions && !pokemonE?.evolutions) {
       setShowEvolutions(true);
@@ -148,7 +154,7 @@ const PokemonDetail: React.FC = () => {
           </div>
         </div>
         <div className="mt-8">
-          <h2 className="text-2xl font-semibold">Evolutions</h2>
+          {/* <h2 className="text-2xl font-semibold">Evolutions</h2> */}
           <div className="flex justify-center mt-4">
             <button
               className="px-4 py-2 bg-blue-500 text-white font-semibold rounded"
@@ -158,25 +164,34 @@ const PokemonDetail: React.FC = () => {
             </button>
           </div>
           {showEvolutions && (
-            <div className="mt-8">
-              <h2 className="text-2xl font-semibold">Evolutions</h2>
-              {pokemonE?.evolutions && pokemonE.evolutions.length > 0 ? (
-                <div className="flex flex-wrap justify-center items-center mt-4">
-                  {pokemonE.evolutions.map((evolution) => (
-                    <div key={evolution.id} className="mx-2">
-                      <img
-                        src={evolution.image}
-                        alt={evolution.name}
-                        className="h-[80px] w-[80px] sm:h-[100px] sm:w-[100px] rounded"
-                      />
-                      <p className="text-center mt-1">{evolution.name}</p>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-gray-500 mt-4">Loading Evolutions</p>
-              )}
-            </div>
+            <Modal isOpen={modalIsOpen} onRequestClose={closeModal}>
+              <button
+                className="absolute top-0 right-0 m-4 text-gray-500 hover:text-gray-800"
+                onClick={closeModal}
+              >
+                Close
+              </button>
+
+              <div className="mt-8">
+                <h2 className="text-2xl font-semibold">Evolutions</h2>
+                {pokemonE?.evolutions && pokemonE.evolutions.length > 0 ? (
+                  <div className="flex flex-wrap justify-center items-center mt-4">
+                    {pokemonE.evolutions.map((evolution) => (
+                      <div key={evolution.id} className="mx-2">
+                        <img
+                          src={evolution.image}
+                          alt={evolution.name}
+                          className="h-[80px] w-[80px] sm:h-[100px] sm:w-[100px] rounded"
+                        />
+                        <p className="text-center mt-1">{evolution.name}</p>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-gray-500 mt-4">No Evolutions</p>
+                )}
+              </div>
+            </Modal>
           )}
         </div>
       </div>
