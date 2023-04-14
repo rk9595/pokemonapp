@@ -1,11 +1,12 @@
+/* eslint-disable @next/next/no-img-element */
 import Head from 'next/head';
-import Image from 'next/image';
+// import Image from 'next/image';
 import { Inter } from 'next/font/google';
-import styles from '@/styles/Home.module.css';
 import { useQuery } from '@apollo/client';
 import GET_POKEMONS from '@/gql/queries/pokemon';
 import graphqlClient from '@/gql/graphql-client';
 import Layout from '@/components/Layout';
+import Link from 'next/link';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -14,47 +15,49 @@ type Pokemon = {
   id: string;
   number: string;
   name: string;
-  weight: {
-    minimum: string;
-    maximum: string;
-  };
-  height: {
-    minimum: string;
-    maximum: string;
-  };
-  classification: string;
   types: string[];
-  resistant: string[];
-  weaknesses: string[];
-  fleeRate: number;
-  maxCP: number;
-  maxHP: number;
   image: string;
 };
 
 // Pokemon list page component
 const Home: React.FC<{ pokemons: Pokemon[] }> = ({ pokemons }) => {
+  // const pokemons = data?.pokemons || [];
+
   return (
     <Layout title={'PokemonApp'}>
       {/* <h1>Pokemon List</h1> */}
-      <ul>
+      <div className="flex flex-wrap justify-center mx-auto">
         {pokemons.map((pokemon) => (
-          <li key={pokemon.id}>
-            <p>ID: {pokemon.id}</p>
-            <p>Number: {pokemon.number}</p>
-            <p>Name: {pokemon.name}</p>
-            <p>
-              Weight: {pokemon.weight.minimum} - {pokemon.weight.maximum}
-            </p>
-            <p>
-              Height: {pokemon.height.minimum} - {pokemon.height.maximum}
-            </p>
-            <p>Classification: {pokemon.classification}</p>
-            <p>Types: {pokemon.types.join(', ')}</p>
-            {/* Render additional Pokemon data as needed */}
-          </li>
+          <div key={pokemon.id} className="p-4">
+            <Link href={`/pokemons/${pokemon.id}`}>
+              <div className="bg-gray-200 py-4 px-6 rounded">
+                <img
+                  src={pokemon.image}
+                  alt=""
+                  className="h-[152px] w-[152px] sm:h-[200px] sm:w-[200px]"
+                />
+                <div className="text-center">
+                  {pokemon.types.map((type) => (
+                    <span
+                      key={type}
+                      className="text-white text-xs font-semibold mr-2 px-2.5 py-0.5 rounded"
+                      // style={{ backgroundColor: styles[type.toLowerCase()] }}
+                    >
+                      {type}
+                    </span>
+                  ))}
+                </div>
+                <p className="text-center">
+                  <span className="font-semibold text-3xl mr-2">
+                    {pokemon.number}
+                  </span>
+                  <span className="text-3xl">{pokemon.name}</span>
+                </p>
+              </div>
+            </Link>
+          </div>
         ))}
-      </ul>
+      </div>
     </Layout>
   );
 };
@@ -64,7 +67,7 @@ export async function getStaticProps() {
   const { data } = await graphqlClient.query({
     query: GET_POKEMONS,
     variables: {
-      first: 20,
+      first: 60,
     },
   });
 
