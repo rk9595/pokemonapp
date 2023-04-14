@@ -5,6 +5,7 @@ import styles from '@/styles/Home.module.css';
 import { useQuery } from '@apollo/client';
 import GET_POKEMONS from '@/gql/queries/pokemon';
 import graphqlClient from '@/gql/graphql-client';
+import Layout from '@/components/Layout';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -34,8 +35,8 @@ type Pokemon = {
 // Pokemon list page component
 const Home: React.FC<{ pokemons: Pokemon[] }> = ({ pokemons }) => {
   return (
-    <div>
-      <h1>Pokemon List</h1>
+    <Layout title={'PokemonApp'}>
+      {/* <h1>Pokemon List</h1> */}
       <ul>
         {pokemons.map((pokemon) => (
           <li key={pokemon.id}>
@@ -54,7 +55,7 @@ const Home: React.FC<{ pokemons: Pokemon[] }> = ({ pokemons }) => {
           </li>
         ))}
       </ul>
-    </div>
+    </Layout>
   );
 };
 
