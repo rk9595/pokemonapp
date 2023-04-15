@@ -57,6 +57,9 @@ const customStyles = {
     transform: 'translate(-50%, -50%)',
   },
 };
+
+Modal.setAppElement('#__next');
+
 interface PokemonDetailProps {
   pokemonData?: Pokemon;
 }
@@ -73,6 +76,9 @@ const PokemonDetail: React.FC<PokemonDetailProps> = ({ pokemonData }) => {
       id: id as string,
     },
   });
+  if (router.isFallback) {
+    return <div>Loading...</div>;
+  }
 
   if (loading) {
     return <div>Loading...</div>;
@@ -162,8 +168,8 @@ const PokemonDetail: React.FC<PokemonDetailProps> = ({ pokemonData }) => {
               <p>{pokemon.maxCP}</p>
             </div>
             <div className="flex justify-center items-center mt-2">
-              <span className="font-semibold">Max HP:</span>
-              <span>{data.pokemon.maxHP}</span>
+              <p className="font-semibold">Max HP:</p>
+              <p>{pokemon.maxHP}</p>
             </div>
           </div>
         </div>
@@ -222,12 +228,15 @@ const PokemonDetail: React.FC<PokemonDetailProps> = ({ pokemonData }) => {
 
 export const getStaticProps: GetStaticProps = async (context) => {
   const id = context.params?.id as string;
-
+  if (!id) {
+    return { notFound: true };
+  }
   // Fetch data for the Pokemon with the given 'id'
   const { data } = await graphqlClient.query({
     query: GET_POKEMON,
     variables: { id },
   });
+  console.log('Fetched data:', data.pokemon);
 
   return { props: { pokemonData: data.pokemon } };
 };
