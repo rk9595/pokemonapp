@@ -7,6 +7,7 @@ import { useRouter } from 'next/router';
 import React, { useState } from 'react';
 import { log } from 'console';
 import Modal from 'react-modal';
+import { GetStaticProps, GetStaticPaths } from 'next';
 
 type Pokemon = {
   id: string;
@@ -46,15 +47,28 @@ type PokemonEvolution = {
   image: string;
 };
 
-const PokemonDetail: React.FC = () => {
+const customStyles = {
+  content: {
+    top: '50%',
+    left: '50%',
+    right: 'auto',
+    bottom: 'auto',
+    marginRight: '-50%',
+    transform: 'translate(-50%, -50%)',
+  },
+};
+interface PokemonDetailProps {
+  pokemonData?: Pokemon;
+}
+const PokemonDetail: React.FC<PokemonDetailProps> = ({ pokemonData }) => {
   const router = useRouter();
   const { id } = router.query; // Access the 'id' parameter from the URL
   const [showEvolutions, setShowEvolutions] = useState(false);
   const [pokemonE, setPokemon] = useState<Pokemon | null>(null);
   const [modalIsOpen, setIsOpen] = React.useState(false);
 
-  // Fetch data for the Pokemon with the given 'id'
   const { loading, error, data } = useQuery(GET_POKEMON, {
+    skip: !!pokemonData,
     variables: {
       id: id as string,
     },
@@ -96,7 +110,7 @@ const PokemonDetail: React.FC = () => {
     }
   };
   console.log('evolutions', pokemonE);
-  const pokemon: Pokemon = data.pokemon;
+  const pokemon = pokemonData || data?.pokemon;
 
   return pokemon ? (
     <Layout title={`Pokemon Details - ${pokemon.name}`}>
@@ -164,7 +178,12 @@ const PokemonDetail: React.FC = () => {
             </button>
           </div>
           {showEvolutions && (
-            <Modal isOpen={modalIsOpen} onRequestClose={closeModal}>
+            <Modal
+              isOpen={modalIsOpen}
+              onRequestClose={closeModal}
+              style={customStyles}
+              contentLabel="Evolutions"
+            >
               <button
                 className="absolute top-0 right-0 m-4 text-gray-500 hover:text-gray-800"
                 onClick={closeModal}
@@ -199,6 +218,27 @@ const PokemonDetail: React.FC = () => {
   ) : (
     <div>Loading...</div>
   );
+};
+
+export const getStaticProps: GetStaticProps = async (context) => {
+  const id = context.params?.id as string;
+
+  // Fetch data for the Pokemon with the given 'id'
+  const { data } = await graphqlClient.query({
+    query: GET_POKEMON,
+    variables: { id },
+  });
+
+  return { props: { pokemonData: data.pokemon } };
+};
+
+export const getStaticPaths: GetStaticPaths = async () => {
+  // Generate an array of paths for the first 20 Pokemon
+  const paths = Array.from({ length: 20 }, (_, i) => ({
+    params: { id: (i + 1).toString() },
+  }));
+
+  return { paths, fallback: true };
 };
 
 export default PokemonDetail;
