@@ -98,7 +98,7 @@ const PokemonDetail: React.FC = () => {
   console.log('evolutions', pokemonE);
   const pokemon: Pokemon = data.pokemon;
 
-  return (
+  return pokemon ? (
     <Layout title={`Pokemon Details - ${pokemon.name}`}>
       <div className="flex flex-col items-center mt-10">
         <img
@@ -196,6 +196,8 @@ const PokemonDetail: React.FC = () => {
         </div>
       </div>
     </Layout>
+  ) : (
+    <div>Loading...</div>
   );
 };
 

@@ -1,17 +1,10 @@
-/* eslint-disable @next/next/no-img-element */
+import { useState, useEffect, useCallback } from 'react';
 import Head from 'next/head';
-// import Image from 'next/image';
-import { Inter } from 'next/font/google';
 import { useQuery } from '@apollo/client';
 import GET_POKEMONS from '@/gql/queries/pokemons';
 import graphqlClient from '@/gql/graphql-client';
 import Layout from '@/components/Layout';
 import Link from 'next/link';
-import GET_POKEMON from '@/gql/queries/pokemon';
-
-const inter = Inter({ subsets: ['latin'] });
-
-// Define the Pokemon type
 type Pokemon = {
   id: string;
   number: string;
@@ -20,15 +13,48 @@ type Pokemon = {
   image: string;
 };
 
-// Pokemon list page component
-const Home: React.FC<{ pokemons: Pokemon[] }> = ({ pokemons }) => {
-  // const pokemons = data?.pokemons || [];
+const Home: React.FC<{ initialPokemons?: Pokemon[] }> = ({
+  initialPokemons = [],
+}) => {
+  const [offset, setOffset] = useState(60); // Start fetching from the 4th page
+  const [pokemons, setPokemons] = useState(initialPokemons);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const loadMorePokemons = useCallback(async () => {
+    const newOffset = offset + 20;
+    setIsLoading(true);
+    const { data } = await graphqlClient.query({
+      query: GET_POKEMONS,
+      variables: {
+        first: 20,
+        offset: newOffset,
+      },
+    });
+
+    setOffset(newOffset);
+    setPokemons([...pokemons, ...data.pokemons]);
+    setIsLoading(false);
+  }, [offset, pokemons]);
+
+  const handleScroll = useCallback(() => {
+    const threshold = 200; // Set a threshold value
+    const scrollPosition =
+      window.innerHeight + document.documentElement.scrollTop;
+    const pageHeight = document.documentElement.offsetHeight;
+
+    if (scrollPosition < pageHeight - threshold) return;
+    loadMorePokemons();
+  }, [loadMorePokemons]);
+
+  useEffect(() => {
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [handleScroll]);
 
   return (
     <Layout title={'PokemonApp'}>
-      {/* <h1>Pokemon List</h1> */}
       <div className="flex flex-wrap justify-center mx-auto">
-        {pokemons.map((pokemon) => (
+        {pokemons?.map((pokemon: Pokemon) => (
           <div key={pokemon.id} className="p-4">
             <Link href={`/pokemons/${pokemon.id}`}>
               <div className="bg-gray-200 py-4 px-6 rounded">
@@ -38,11 +64,10 @@ const Home: React.FC<{ pokemons: Pokemon[] }> = ({ pokemons }) => {
                   className="h-[152px] w-[152px] sm:h-[200px] sm:w-[200px]"
                 />
                 <div className="text-center">
-                  {pokemon.types.map((type) => (
+                  {pokemon?.types.map((type) => (
                     <span
                       key={type}
                       className="text-white text-xs font-semibold mr-2 px-2.5 py-0.5 rounded"
-                      // style={{ backgroundColor: styles[type.toLowerCase()] }}
                     >
                       {type}
                     </span>
@@ -59,22 +84,33 @@ const Home: React.FC<{ pokemons: Pokemon[] }> = ({ pokemons }) => {
           </div>
         ))}
       </div>
+      <div className="container mx-auto flex flex-wrap justify-center items-center pb-8 ">
+        {isLoading ? (
+          <div className="border-t-4 border-blue-500 border-solid rounded-full w-12 h-12 animate-spin" />
+        ) : (
+          <button
+            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+            onClick={loadMorePokemons}
+          >
+            Load More
+          </button>
+        )}
+      </div>
     </Layout>
   );
 };
 
-// Fetch data from GraphQL API using Apollo Client
 export async function getStaticProps() {
   const { data } = await graphqlClient.query({
     query: GET_POKEMONS,
     variables: {
-      first: 60,
+      first: 60, // Fetch the first 60 Pokemon (first three pages)
     },
   });
 
   return {
     props: {
-      pokemons: data.pokemons,
+      initialPokemons: data.pokemons,
     },
   };
 }
